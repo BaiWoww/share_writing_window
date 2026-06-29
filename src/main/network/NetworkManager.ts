@@ -37,9 +37,10 @@ export class NetworkManager implements NetBridge {
     this.room.setNetBridge(this)
     this.room.setRole('host')
     this.room.setDevices([this.hostDevice()])
-    this.room.setStatus(`主机运行中 :${actualPort}`)
+    const host = getLocalIp()
+    this.room.setStatus(`主机运行中 ${host}:${actualPort}`)
     this.startHeartbeat()
-    return { host: getLocalIp(), port: actualPort }
+    return { host, port: actualPort }
   }
 
   async stopHost(): Promise<void> {
