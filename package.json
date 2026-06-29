@@ -1,0 +1,70 @@
+{
+  "name": "shared-notes",
+  "productName": "共享便签",
+  "version": "0.1.0",
+  "description": "局域网共享便签 - 同一局域网下不同 Windows 设备实时同步便签",
+  "main": "./out/main/index.js",
+  "author": {
+    "name": "BaiWoww",
+    "url": "https://github.com/BaiWoww"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/BaiWoww/share_writing_window",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BaiWoww/share_writing_window.git"
+  },
+  "bugs": {
+    "url": "https://github.com/BaiWoww/share_writing_window/issues"
+  },
+  "keywords": [
+    "electron",
+    "react",
+    "typescript",
+    "websocket",
+    "lan",
+    "notes",
+    "shared-notes",
+    "real-time",
+    "sql.js"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
+    "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
+    "typecheck": "npm run typecheck:node && npm run typecheck:web",
+    "lint": "prettier --check \"src/**/*.{ts,tsx,css,json,md}\" \"*.{ts,js,json,md,yml}\"",
+    "lint:fix": "prettier --write \"src/**/*.{ts,tsx,css,json,md}\" \"*.{ts,js,json,md,yml}\"",
+    "build:win": "electron-vite build && electron-builder --win --config electron-builder.yml"
+  },
+  "dependencies": {
+    "sql.js": "^1.13.0",
+    "uuid": "^11.0.5",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@types/sql.js": "^1.4.9",
+    "@types/uuid": "^10.0.0",
+    "@types/ws": "^8.5.13",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "electron-vite": "^2.3.0",
+    "postcss": "^8.4.49",
+    "prettier": "^3.4.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwindcss": "^3.4.15",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11"
+  }
+}

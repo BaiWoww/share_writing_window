@@ -1,0 +1,29 @@
+appId: com.sharednotes.app
+productName: 共享便签
+copyright: Copyright © 2026
+directories:
+  output: dist
+files:
+  - out/**/*
+  - package.json
+  - '!**/*.{map}'
+  - '!**/tsconfig*.json'
+  - '!**/{eslint,prettier,tailwind,postcss}.config.*'
+  - '!electron.vite.config.*'
+  - '!src/**/*'
+asar: true
+win:
+  target:
+    - nsis
+    - portable
+  artifactName: ${productName}-${version}-${arch}.${ext}
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: 共享便签
+  deleteAppDataOnUninstall: false
+portable:
+  artifactName: ${productName}-${version}-portable.${ext}
