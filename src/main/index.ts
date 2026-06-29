@@ -18,6 +18,7 @@ function createWindow(): BrowserWindow {
     autoHideMenuBar: true,
     title: '共享便签',
     backgroundColor: '#ffffff',
+    icon: join(app.getAppPath(), 'assets', 'icon.png'),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,

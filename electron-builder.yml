@@ -6,6 +6,7 @@ directories:
 files:
   - out/**/*
   - package.json
+  - assets/**/*
   - '!**/*.{map}'
   - '!**/tsconfig*.json'
   - '!**/{eslint,prettier,tailwind,postcss}.config.*'
@@ -13,6 +14,7 @@ files:
   - '!src/**/*'
 asar: true
 win:
+  icon: assets/icon.ico
   target:
     - nsis
     - portable
