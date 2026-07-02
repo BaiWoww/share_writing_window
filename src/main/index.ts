@@ -4,9 +4,13 @@ import { Store } from './storage/Store'
 import { RoomManager } from './room/RoomManager'
 import { NetworkManager } from './network/NetworkManager'
 import { getLocalIp } from './network/util'
+import { RoomDiscoverer } from './network/Discovery'
+import type { RoomInfo } from '@shared/types'
 
 let room: RoomManager
 let net: NetworkManager
+let mainWindow: BrowserWindow | null = null
+let discoverer: RoomDiscoverer | null = null
 
 function createWindow(): BrowserWindow {
   const mainWindow = new BrowserWindow({
@@ -68,6 +72,26 @@ function registerIpc(room: RoomManager): void {
   ipcMain.handle('host:disconnect', async () => {
     await net.disconnect()
   })
+  ipcMain.handle('discovery:start', async () => {
+    if (discoverer) discoverer.stop()
+    discoverer = new RoomDiscoverer(
+      room.getLocalDeviceId(),
+      (roomInfo: RoomInfo) => {
+        mainWindow?.webContents.send('discovery:room', roomInfo)
+      },
+      () => {
+        mainWindow?.webContents.send('discovery:done')
+        discoverer = null
+      }
+    )
+    discoverer.start()
+  })
+  ipcMain.handle('discovery:stop', async () => {
+    if (discoverer) {
+      discoverer.stop()
+      discoverer = null
+    }
+  })
 }
 
 app.whenReady().then(async () => {
@@ -77,12 +101,22 @@ app.whenReady().then(async () => {
   net = new NetworkManager(room)
 
   const win = createWindow()
+  mainWindow = win
   room.setWindow(win)
   registerIpc(room)
+
+  win.on('closed', () => {
+    if (discoverer) {
+      discoverer.stop()
+      discoverer = null
+    }
+    mainWindow = null
+  })
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       const w = createWindow()
+      mainWindow = w
       room.setWindow(w)
     }
   })

@@ -1,4 +1,4 @@
-import type { Note, DeviceInfo, Role } from '@shared/types'
+import type { Note, DeviceInfo, Role, RoomInfo } from '@shared/types'
 
 export interface AppApi {
   ping: () => Promise<string>
@@ -16,6 +16,10 @@ export interface AppApi {
   joinHost: (host: string, port: number, deviceName: string) => Promise<void>
   disconnect: () => Promise<void>
   getLocalIp: () => Promise<string>
+  startDiscovery: () => Promise<void>
+  stopDiscovery: () => Promise<void>
+  onDiscoveryRoom: (cb: (room: RoomInfo) => void) => () => void
+  onDiscoveryDone: (cb: () => void) => () => void
 }
 
 declare global {

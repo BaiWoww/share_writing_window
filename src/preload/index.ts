@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
-import type { Note, DeviceInfo, Role } from '@shared/types'
+import type { Note, DeviceInfo, Role, RoomInfo } from '@shared/types'
 
 type Listener<T> = (payload: T) => void
 
@@ -30,7 +30,11 @@ const api = {
   joinHost: (host: string, port: number, deviceName: string): Promise<void> =>
     ipcRenderer.invoke('host:join', host, port, deviceName),
   disconnect: (): Promise<void> => ipcRenderer.invoke('host:disconnect'),
-  getLocalIp: (): Promise<string> => ipcRenderer.invoke('host:local-ip')
+  getLocalIp: (): Promise<string> => ipcRenderer.invoke('host:local-ip'),
+  startDiscovery: (): Promise<void> => ipcRenderer.invoke('discovery:start'),
+  stopDiscovery: (): Promise<void> => ipcRenderer.invoke('discovery:stop'),
+  onDiscoveryRoom: (cb: Listener<RoomInfo>) => on<RoomInfo>('discovery:room', cb),
+  onDiscoveryDone: (cb: () => void) => on<void>('discovery:done', cb)
 }
 
 if (process.contextIsolated) {

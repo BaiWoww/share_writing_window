@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import type { RoomInfo } from '@shared/types'
 
 interface ConnectionDialogProps {
   open: boolean
@@ -6,6 +7,8 @@ interface ConnectionDialogProps {
   onClose: () => void
   onStartHost: (deviceName: string) => Promise<void>
   onJoin: (host: string, port: number, deviceName: string) => Promise<void>
+  onStartDiscovery: () => Promise<void>
+  onStopDiscovery: () => Promise<void>
 }
 
 export function ConnectionDialog({
@@ -13,7 +16,9 @@ export function ConnectionDialog({
   localIp,
   onClose,
   onStartHost,
-  onJoin
+  onJoin,
+  onStartDiscovery,
+  onStopDiscovery
 }: ConnectionDialogProps): JSX.Element | null {
   const [tab, setTab] = useState<'host' | 'join'>('host')
   const [deviceName, setDeviceName] = useState('我的设备')
@@ -21,13 +26,44 @@ export function ConnectionDialog({
   const [port, setPort] = useState('8787')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [rooms, setRooms] = useState<RoomInfo[]>([])
+  const [selectedRoom, setSelectedRoom] = useState<RoomInfo | null>(null)
+  const [searching, setSearching] = useState(false)
+  const unsubRef = useRef<Array<() => void>>([])
 
   useEffect(() => {
     if (open) {
       setError(null)
       setBusy(false)
+      setRooms([])
+      setSelectedRoom(null)
+      setSearching(false)
     }
   }, [open])
+
+  useEffect(() => {
+    const offRoom = window.app.onDiscoveryRoom((room) => {
+      setRooms((prev) => {
+        if (prev.some((r) => r.hostId === room.hostId)) return prev
+        return [...prev, room]
+      })
+    })
+    const offDone = window.app.onDiscoveryDone(() => {
+      setSearching(false)
+    })
+    unsubRef.current = [offRoom, offDone]
+    return (): void => {
+      unsubRef.current.forEach((fn) => fn())
+      unsubRef.current = []
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!open && searching) {
+      void onStopDiscovery()
+      setSearching(false)
+    }
+  }, [open, searching, onStopDiscovery])
 
   if (!open) return null
 
@@ -44,10 +80,35 @@ export function ConnectionDialog({
     }
   }
 
+  const handleSearch = async (): Promise<void> => {
+    setError(null)
+    setRooms([])
+    setSelectedRoom(null)
+    setSearching(true)
+    try {
+      await onStartDiscovery()
+    } catch (e) {
+      setSearching(false)
+      setError(String(e))
+    }
+  }
+
+  const handleStopSearch = async (): Promise<void> => {
+    await onStopDiscovery()
+    setSearching(false)
+  }
+
+  const handleSelectRoom = (room: RoomInfo): void => {
+    setSelectedRoom(room)
+    setHost(room.host)
+    setPort(String(room.port))
+  }
+
   const handleJoin = async (): Promise<void> => {
     setBusy(true)
     setError(null)
     try {
+      if (searching) await onStopDiscovery()
       const portNum = parseInt(port, 10)
       if (!host) throw new Error('请输入主机地址')
       if (!portNum || portNum < 1 || portNum > 65535) throw new Error('端口无效')
@@ -115,15 +176,69 @@ export function ConnectionDialog({
               <div className="mt-1 font-mono text-sm text-notion-text">
                 {localIp || '获取中…'} : 8787
               </div>
+              <div className="mt-1.5 text-[11px] text-notion-subtext">
+                其他设备可在"加入房间"中点击搜索自动发现本机。
+              </div>
             </div>
           ) : (
             <>
+              <div className="mb-2 flex items-center gap-2">
+                <button
+                  onClick={searching ? handleStopSearch : handleSearch}
+                  disabled={busy}
+                  className="flex items-center gap-1.5 rounded-md border border-notion-border px-3 py-1.5 text-xs font-medium text-notion-text transition-colors hover:bg-notion-hover disabled:opacity-50"
+                >
+                  {searching ? '停止搜索' : '🔍 搜索局域网房间'}
+                </button>
+                {searching && (
+                  <span className="text-xs text-notion-subtext">
+                    搜索中… {rooms.length > 0 && `(已发现 ${rooms.length})`}
+                  </span>
+                )}
+              </div>
+
+              {rooms.length > 0 && (
+                <div className="mb-3 max-h-40 overflow-y-auto rounded-md border border-notion-border">
+                  {rooms.map((room) => {
+                    const active = selectedRoom?.hostId === room.hostId
+                    return (
+                      <button
+                        key={room.hostId}
+                        onClick={() => handleSelectRoom(room)}
+                        className={`flex w-full items-center justify-between border-b border-notion-border px-3 py-2 text-left text-sm transition-colors last:border-b-0 ${
+                          active
+                            ? 'bg-notion-hover text-notion-text'
+                            : 'text-notion-text hover:bg-notion-hover'
+                        }`}
+                      >
+                        <span className="truncate font-medium">{room.deviceName}</span>
+                        <span className="ml-2 shrink-0 font-mono text-xs text-notion-subtext">
+                          {room.host}:{room.port}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+
+              {!searching && rooms.length === 0 && (
+                <div className="mb-3 text-center text-xs text-notion-subtext">
+                  点击上方按钮搜索，或手动输入地址加入
+                </div>
+              )}
+
+              <div className="mb-1 mt-2 text-[11px] font-medium text-notion-subtext">
+                手动输入
+              </div>
               <label className="mb-1 block text-xs font-medium text-notion-subtext">
                 主机地址
               </label>
               <input
                 value={host}
-                onChange={(e) => setHost(e.target.value)}
+                onChange={(e) => {
+                  setHost(e.target.value)
+                  setSelectedRoom(null)
+                }}
                 placeholder="例如 192.168.1.5"
                 className="mb-3 w-full rounded-md border border-notion-border px-3 py-2 text-sm text-notion-text outline-none focus:border-notion-accent"
               />

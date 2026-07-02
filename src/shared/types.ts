@@ -32,3 +32,14 @@ export type HostMessage =
   | { type: 'devices:update'; devices: DeviceInfo[] }
 
 export type NetMessage = ClientMessage | HostMessage
+
+export interface RoomInfo {
+  host: string
+  port: number
+  deviceName: string
+  hostId: string
+}
+
+export type DiscoveryMessage =
+  | { type: 'discover'; from: string }
+  | ({ type: 'announce' } & RoomInfo)

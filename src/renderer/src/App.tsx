@@ -53,6 +53,14 @@ export default function App(): JSX.Element {
     await window.app.disconnect()
   }
 
+  const handleStartDiscovery = async (): Promise<void> => {
+    await window.app.startDiscovery()
+  }
+
+  const handleStopDiscovery = async (): Promise<void> => {
+    await window.app.stopDiscovery()
+  }
+
   return (
     <div className="flex h-full w-full flex-col">
       <TopBar
@@ -82,6 +90,8 @@ export default function App(): JSX.Element {
         onClose={() => setDialogOpen(false)}
         onStartHost={handleStartHost}
         onJoin={handleJoin}
+        onStartDiscovery={handleStartDiscovery}
+        onStopDiscovery={handleStopDiscovery}
       />
     </div>
   )

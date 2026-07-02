@@ -3,6 +3,7 @@ import { createServer, type Server as NetServer } from 'net'
 import { v4 as uuidv4 } from 'uuid'
 import { RoomManager, type NetBridge, NullNetBridge } from '../room/RoomManager'
 import { getLocalIp } from './util'
+import { HostAnnouncer } from './Discovery'
 import type { ClientMessage, HostMessage, DeviceInfo } from '@shared/types'
 
 export class NetworkManager implements NetBridge {
@@ -20,6 +21,7 @@ export class NetworkManager implements NetBridge {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null
   private alive = new Map<WebSocket, boolean>()
+  private announcer = new HostAnnouncer()
 
   constructor(room: RoomManager) {
     this.room = room
@@ -39,12 +41,18 @@ export class NetworkManager implements NetBridge {
     this.room.setDevices([this.hostDevice()])
     const host = getLocalIp()
     this.room.setStatus(`主机运行中 ${host}:${actualPort}`)
+    this.announcer.start(
+      actualPort,
+      this.room.getLocalDeviceName(),
+      this.room.getLocalDeviceId()
+    )
     this.startHeartbeat()
     return { host, port: actualPort }
   }
 
   async stopHost(): Promise<void> {
     this.stopHeartbeat()
+    this.announcer.stop()
     for (const ws of this.clients.keys()) {
       try {
         ws.close(1001, 'host closing')
