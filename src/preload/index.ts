@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
-import type { Note, DeviceInfo, Role, RoomInfo } from '@shared/types'
+import type { Note, DeviceInfo, Role, RoomInfo, SharedFile, FileTransfer } from '@shared/types'
 
 type Listener<T> = (payload: T) => void
 
@@ -34,7 +34,18 @@ const api = {
   startDiscovery: (): Promise<void> => ipcRenderer.invoke('discovery:start'),
   stopDiscovery: (): Promise<void> => ipcRenderer.invoke('discovery:stop'),
   onDiscoveryRoom: (cb: Listener<RoomInfo>) => on<RoomInfo>('discovery:room', cb),
-  onDiscoveryDone: (cb: () => void) => on<void>('discovery:done', cb)
+  onDiscoveryDone: (cb: () => void) => on<void>('discovery:done', cb),
+
+  /* file transfer */
+  onFilesChange: (cb: Listener<SharedFile[]>) => on<SharedFile[]>('files:change', cb),
+  onFileTransfer: (cb: Listener<FileTransfer>) => on<FileTransfer>('file:transfer', cb),
+  getFiles: (): Promise<SharedFile[]> => ipcRenderer.invoke('file:list'),
+  selectFile: (): Promise<string | null> => ipcRenderer.invoke('file:select'),
+  sendFile: (filePath: string): Promise<void> => ipcRenderer.invoke('file:send', filePath),
+  openFile: (path: string): Promise<void> => ipcRenderer.invoke('file:open', path),
+  saveFileAs: (id: string): Promise<boolean> => ipcRenderer.invoke('file:save-as', id),
+  deleteFile: (id: string): Promise<void> => ipcRenderer.invoke('file:delete', id),
+  revealFile: (path: string): Promise<void> => ipcRenderer.invoke('file:reveal', path)
 }
 
 if (process.contextIsolated) {

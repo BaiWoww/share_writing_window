@@ -41,11 +41,7 @@ export class NetworkManager implements NetBridge {
     this.room.setDevices([this.hostDevice()])
     const host = getLocalIp()
     this.room.setStatus(`主机运行中 ${host}:${actualPort}`)
-    this.announcer.start(
-      actualPort,
-      this.room.getLocalDeviceName(),
-      this.room.getLocalDeviceId()
-    )
+    this.announcer.start(actualPort, this.room.getLocalDeviceName(), this.room.getLocalDeviceId())
     this.startHeartbeat()
     return { host, port: actualPort }
   }
@@ -107,7 +103,13 @@ export class NetworkManager implements NetBridge {
     ws.on('pong', () => {
       this.alive.set(ws, true)
     })
-    ws.on('message', (raw) => this.handleClientMessage(ws, raw.toString()))
+    ws.on('message', (raw, isBinary) => {
+      if (isBinary) {
+        this.handleBinaryFromClient(ws, Buffer.from(raw as Uint8Array))
+      } else {
+        this.handleClientMessage(ws, raw.toString())
+      }
+    })
     ws.on('close', () => this.handleDisconnect(ws))
     ws.on('error', () => this.handleDisconnect(ws))
   }
@@ -189,6 +191,14 @@ export class NetworkManager implements NetBridge {
         this.room.applyNoteDelete(msg.id)
         this.broadcast({ type: 'note:delete', id: msg.id })
         break
+      case 'file:offer':
+        this.room.handleFileOffer(msg.file)
+        this.broadcastToOthers(ws, { type: 'file:offer', file: msg.file })
+        break
+      case 'file:complete':
+        this.room.handleFileComplete(msg.fileId)
+        this.broadcastToOthers(ws, { type: 'file:complete', fileId: msg.fileId })
+        break
       case 'bye':
         this.handleDisconnect(ws)
         break
@@ -199,6 +209,36 @@ export class NetworkManager implements NetBridge {
     const devices = this.currentDevices()
     this.room.setDevices(devices)
     this.broadcast({ type: 'devices:update', devices })
+  }
+
+  /** Broadcast a JSON message to every client **except** the sender. */
+  private broadcastToOthers(sender: WebSocket, msg: HostMessage): void {
+    const data = JSON.stringify(msg)
+    for (const ws of this.clients.keys()) {
+      if (ws === sender) continue
+      if (ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(data)
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+  }
+
+  /** Relay a binary frame to every client except the sender, and buffer locally. */
+  private handleBinaryFromClient(sender: WebSocket, buf: Buffer): void {
+    this.room.handleFileChunkRaw(buf)
+    for (const ws of this.clients.keys()) {
+      if (ws === sender) continue
+      if (ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(buf)
+        } catch {
+          /* ignore */
+        }
+      }
+    }
   }
 
   private sendTo(ws: WebSocket, msg: HostMessage): void {
@@ -216,6 +256,28 @@ export class NetworkManager implements NetBridge {
         } catch {
           /* ignore */
         }
+      }
+    }
+  }
+
+  sendBinary(data: Buffer): void {
+    if (this.wss) {
+      // Host mode – push to every connected client.
+      for (const ws of this.clients.keys()) {
+        if (ws.readyState === WebSocket.OPEN) {
+          try {
+            ws.send(data)
+          } catch {
+            /* ignore */
+          }
+        }
+      }
+    } else if (this.guestWs && this.guestWs.readyState === WebSocket.OPEN) {
+      // Guest mode – push to the host.
+      try {
+        this.guestWs.send(data)
+      } catch {
+        /* ignore */
       }
     }
   }
@@ -282,7 +344,11 @@ export class NetworkManager implements NetBridge {
         })
       })
 
-      ws.on('message', (raw) => {
+      ws.on('message', (raw, isBinary) => {
+        if (isBinary) {
+          this.room.handleFileChunkRaw(Buffer.from(raw as Uint8Array))
+          return
+        }
         let msg: HostMessage
         try {
           msg = JSON.parse(raw.toString()) as HostMessage
@@ -378,6 +444,12 @@ export class NetworkManager implements NetBridge {
         break
       case 'note:delete':
         this.room.applyNoteDelete(msg.id)
+        break
+      case 'file:offer':
+        this.room.handleFileOffer(msg.file)
+        break
+      case 'file:complete':
+        this.room.handleFileComplete(msg.fileId)
         break
     }
   }

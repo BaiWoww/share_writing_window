@@ -47,14 +47,14 @@
 
 ## 🛠️ 技术栈
 
-| 层级 | 技术 |
-|------|------|
-| 桌面框架 | Electron 33 |
-| 构建 | electron-vite + Vite 5 |
-| UI | React 18 + TypeScript 5 + Tailwind CSS 3 |
-| 通信 | `ws` (WebSocket) |
-| 存储 | `sql.js` (WASM SQLite) |
-| 打包 | electron-builder (NSIS + portable) |
+| 层级     | 技术                                     |
+| -------- | ---------------------------------------- |
+| 桌面框架 | Electron 33                              |
+| 构建     | electron-vite + Vite 5                   |
+| UI       | React 18 + TypeScript 5 + Tailwind CSS 3 |
+| 通信     | `ws` (WebSocket)                         |
+| 存储     | `sql.js` (WASM SQLite)                   |
+| 打包     | electron-builder (NSIS + portable)       |
 
 ## 🚀 快速开始
 
@@ -78,6 +78,7 @@ npm run build:win
 ```
 
 产物在 `dist/`：
+
 - `共享便签-0.1.0-x64.exe` — NSIS 安装包
 - `共享便签-0.1.0-portable.exe` — 免安装版（推荐试用）
 
@@ -134,16 +135,16 @@ writing_window/
 
 ## 🔌 通信协议（WebSocket JSON）
 
-| 方向 | 类型 | 负载 | 说明 |
-|------|------|------|------|
-| C→H | `hello` | `{deviceId, deviceName}` | 加入 |
-| H→C | `welcome` | `{notes, devices}` | 全量同步 |
-| C→H/H→C | `note:create` | `note` | 新建 |
-| C→H/H→C | `note:update` | `{id, content, updatedAt}` | 编辑（去抖 300ms） |
-| C→H/H→C | `note:rename` | `{id, title, updatedAt}` | 重命名 |
-| C→H/H→C | `note:delete` | `{id}` | 删除 |
-| H→C | `devices:update` | `{devices}` | 设备列表变化 |
-| C→H | `bye` | — | 退出 |
+| 方向    | 类型             | 负载                       | 说明               |
+| ------- | ---------------- | -------------------------- | ------------------ |
+| C→H     | `hello`          | `{deviceId, deviceName}`   | 加入               |
+| H→C     | `welcome`        | `{notes, devices}`         | 全量同步           |
+| C→H/H→C | `note:create`    | `note`                     | 新建               |
+| C→H/H→C | `note:update`    | `{id, content, updatedAt}` | 编辑（去抖 300ms） |
+| C→H/H→C | `note:rename`    | `{id, title, updatedAt}`   | 重命名             |
+| C→H/H→C | `note:delete`    | `{id}`                     | 删除               |
+| H→C     | `devices:update` | `{devices}`                | 设备列表变化       |
+| C→H     | `bye`            | —                          | 退出               |
 
 ## ⚠️ 已知限制（MVP）
 

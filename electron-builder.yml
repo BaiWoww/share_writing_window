@@ -19,6 +19,7 @@ win:
     - nsis
     - portable
   artifactName: ${productName}-${version}-${arch}.${ext}
+  signAndEditExecutable: false
 nsis:
   oneClick: false
   perMachine: false

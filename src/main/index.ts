@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell, ipcMain } from 'electron'
+import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { Store } from './storage/Store'
 import { RoomManager } from './room/RoomManager'
@@ -57,10 +57,42 @@ function registerIpc(room: RoomManager): void {
   ipcMain.handle('note:update-content', (_e, id: string, content: string) =>
     room.updateNoteContent(id, content)
   )
-  ipcMain.handle('note:rename', (_e, id: string, title: string) =>
-    room.renameNote(id, title)
-  )
+  ipcMain.handle('note:rename', (_e, id: string, title: string) => room.renameNote(id, title))
   ipcMain.handle('note:delete', (_e, id: string) => room.deleteNote(id))
+
+  /* ----------------------------- file IPC ----------------------------- */
+  ipcMain.handle('file:list', () => room.getFiles())
+  ipcMain.handle('file:select', async () => {
+    const result = await dialog.showOpenDialog(mainWindow!, {
+      title: '选择要共享的文件',
+      properties: ['openFile']
+    })
+    if (result.canceled || result.filePaths.length === 0) return null
+    return result.filePaths[0]
+  })
+  ipcMain.handle('file:send', async (_e, filePath: string) => {
+    await room.sendFile(filePath)
+  })
+  ipcMain.handle('file:open', async (_e, path: string) => {
+    await shell.openPath(path)
+  })
+  ipcMain.handle('file:save-as', async (_e, id: string) => {
+    const file = room.getFiles().find((f) => f.id === id)
+    if (!file) throw new Error('文件不存在')
+    const result = await dialog.showSaveDialog(mainWindow!, {
+      title: '另存为',
+      defaultPath: file.name
+    })
+    if (result.canceled || !result.filePath) return false
+    await room.saveFileAs(id, result.filePath)
+    return true
+  })
+  ipcMain.handle('file:delete', async (_e, id: string) => {
+    await room.deleteFile(id)
+  })
+  ipcMain.handle('file:reveal', async (_e, path: string) => {
+    shell.showItemInFolder(path)
+  })
   ipcMain.handle('host:local-ip', () => getLocalIp())
   ipcMain.handle('host:start', async (_e, deviceName: string) => {
     room.setLocalDeviceName(deviceName)

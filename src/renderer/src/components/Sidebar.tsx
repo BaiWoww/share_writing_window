@@ -48,9 +48,7 @@ export function Sidebar({
 
       <div className="flex-1 overflow-y-auto px-2 pb-3">
         {notes.length === 0 ? (
-          <div className="px-2 py-6 text-center text-xs text-notion-subtext">
-            暂无便签
-          </div>
+          <div className="px-2 py-6 text-center text-xs text-notion-subtext">暂无便签</div>
         ) : (
           notes.map((note) => {
             const isActive = note.id === selectedId

@@ -1,4 +1,4 @@
-import type { Note, DeviceInfo, Role, RoomInfo } from '@shared/types'
+import type { Note, DeviceInfo, Role, RoomInfo, SharedFile, FileTransfer } from '@shared/types'
 
 export interface AppApi {
   ping: () => Promise<string>
@@ -20,6 +20,17 @@ export interface AppApi {
   stopDiscovery: () => Promise<void>
   onDiscoveryRoom: (cb: (room: RoomInfo) => void) => () => void
   onDiscoveryDone: (cb: () => void) => () => void
+
+  /* file transfer */
+  onFilesChange: (cb: (files: SharedFile[]) => void) => () => void
+  onFileTransfer: (cb: (transfer: FileTransfer) => void) => () => void
+  getFiles: () => Promise<SharedFile[]>
+  selectFile: () => Promise<string | null>
+  sendFile: (filePath: string) => Promise<void>
+  openFile: (path: string) => Promise<void>
+  saveFileAs: (id: string) => Promise<boolean>
+  deleteFile: (id: string) => Promise<void>
+  revealFile: (path: string) => Promise<void>
 }
 
 declare global {

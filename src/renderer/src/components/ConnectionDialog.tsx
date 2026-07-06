@@ -132,9 +132,7 @@ export function ConnectionDialog({
       >
         <div className="px-5 pt-5 pb-3">
           <h2 className="text-base font-semibold text-notion-text">建立连接</h2>
-          <p className="mt-1 text-xs text-notion-subtext">
-            在同一局域网下与其他设备共享便签
-          </p>
+          <p className="mt-1 text-xs text-notion-subtext">在同一局域网下与其他设备共享便签</p>
         </div>
 
         <div className="mx-5 flex gap-1 rounded-lg bg-notion-sidebar p-1">
@@ -161,9 +159,7 @@ export function ConnectionDialog({
         </div>
 
         <div className="px-5 py-4">
-          <label className="mb-1 block text-xs font-medium text-notion-subtext">
-            设备名称
-          </label>
+          <label className="mb-1 block text-xs font-medium text-notion-subtext">设备名称</label>
           <input
             value={deviceName}
             onChange={(e) => setDeviceName(e.target.value)}
@@ -227,12 +223,8 @@ export function ConnectionDialog({
                 </div>
               )}
 
-              <div className="mb-1 mt-2 text-[11px] font-medium text-notion-subtext">
-                手动输入
-              </div>
-              <label className="mb-1 block text-xs font-medium text-notion-subtext">
-                主机地址
-              </label>
+              <div className="mb-1 mt-2 text-[11px] font-medium text-notion-subtext">手动输入</div>
+              <label className="mb-1 block text-xs font-medium text-notion-subtext">主机地址</label>
               <input
                 value={host}
                 onChange={(e) => {
@@ -242,9 +234,7 @@ export function ConnectionDialog({
                 placeholder="例如 192.168.1.5"
                 className="mb-3 w-full rounded-md border border-notion-border px-3 py-2 text-sm text-notion-text outline-none focus:border-notion-accent"
               />
-              <label className="mb-1 block text-xs font-medium text-notion-subtext">
-                端口
-              </label>
+              <label className="mb-1 block text-xs font-medium text-notion-subtext">端口</label>
               <input
                 value={port}
                 onChange={(e) => setPort(e.target.value)}
@@ -254,9 +244,7 @@ export function ConnectionDialog({
           )}
 
           {error && (
-            <div className="mb-3 rounded-md bg-red-50 px-3 py-2 text-xs text-red-600">
-              {error}
-            </div>
+            <div className="mb-3 rounded-md bg-red-50 px-3 py-2 text-xs text-red-600">{error}</div>
           )}
 
           <div className="flex justify-end gap-2 pt-1">
