@@ -4,11 +4,12 @@ import { Editor } from './components/Editor'
 import { TopBar } from './components/TopBar'
 import { ConnectionDialog } from './components/ConnectionDialog'
 import { FilePanel } from './components/FilePanel'
+import { SyncPanel } from './components/SyncPanel'
 import { useNotes } from './hooks/useNotes'
 import { useFiles } from './hooks/useFiles'
 import type { DeviceInfo, Role } from '@shared/types'
 
-type ViewMode = 'notes' | 'files'
+type ViewMode = 'notes' | 'files' | 'sync'
 
 export default function App(): JSX.Element {
   const {
@@ -101,7 +102,7 @@ export default function App(): JSX.Element {
             />
             <Editor note={selectedNote} onUpdateContent={updateContent} onRename={renameNote} />
           </>
-        ) : (
+        ) : viewMode === 'files' ? (
           <FilePanel
             files={files}
             transfers={transfers}
@@ -113,6 +114,8 @@ export default function App(): JSX.Element {
             onDelete={deleteFile}
             onReveal={revealFile}
           />
+        ) : (
+          <SyncPanel isConnected={isConnected} />
         )}
       </div>
       <ConnectionDialog

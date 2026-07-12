@@ -1,5 +1,13 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
-import type { Note, DeviceInfo, Role, RoomInfo, SharedFile, FileTransfer } from '@shared/types'
+import type {
+  Note,
+  DeviceInfo,
+  Role,
+  RoomInfo,
+  SharedFile,
+  FileTransfer,
+  SyncProgress
+} from '@shared/types'
 
 type Listener<T> = (payload: T) => void
 
@@ -45,7 +53,14 @@ const api = {
   openFile: (path: string): Promise<void> => ipcRenderer.invoke('file:open', path),
   saveFileAs: (id: string): Promise<boolean> => ipcRenderer.invoke('file:save-as', id),
   deleteFile: (id: string): Promise<void> => ipcRenderer.invoke('file:delete', id),
-  revealFile: (path: string): Promise<void> => ipcRenderer.invoke('file:reveal', path)
+  revealFile: (path: string): Promise<void> => ipcRenderer.invoke('file:reveal', path),
+
+  /* folder sync */
+  selectSyncFolder: (): Promise<string | null> => ipcRenderer.invoke('sync:select-folder'),
+  setSyncFolder: (path: string): Promise<void> => ipcRenderer.invoke('sync:set-folder', path),
+  getSyncFolder: (): Promise<string> => ipcRenderer.invoke('sync:get-folder'),
+  startSync: (): Promise<void> => ipcRenderer.invoke('sync:start'),
+  onSyncProgress: (cb: Listener<SyncProgress>) => on<SyncProgress>('sync:progress', cb)
 }
 
 if (process.contextIsolated) {

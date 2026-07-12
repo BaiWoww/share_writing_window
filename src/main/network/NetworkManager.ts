@@ -199,6 +199,22 @@ export class NetworkManager implements NetBridge {
         this.room.handleFileComplete(msg.fileId)
         this.broadcastToOthers(ws, { type: 'file:complete', fileId: msg.fileId })
         break
+      case 'sync:request':
+        this.room.handleSyncRequest(msg.manifest)
+        this.broadcastToOthers(ws, { type: 'sync:request', manifest: msg.manifest })
+        break
+      case 'sync:response':
+        this.room.handleSyncResponse(msg.syncId, msg.manifest, msg.neededFiles, msg.toDeviceId)
+        this.broadcastToOthers(ws, msg)
+        break
+      case 'sync:package:offer':
+        this.room.handleSyncPackageOffer(msg.syncId, msg.file, msg.toDeviceId)
+        this.broadcastToOthers(ws, msg)
+        break
+      case 'sync:done':
+        this.room.handleSyncDone(msg.syncId, msg.toDeviceId)
+        this.broadcastToOthers(ws, msg)
+        break
       case 'bye':
         this.handleDisconnect(ws)
         break
@@ -450,6 +466,18 @@ export class NetworkManager implements NetBridge {
         break
       case 'file:complete':
         this.room.handleFileComplete(msg.fileId)
+        break
+      case 'sync:request':
+        this.room.handleSyncRequest(msg.manifest)
+        break
+      case 'sync:response':
+        this.room.handleSyncResponse(msg.syncId, msg.manifest, msg.neededFiles, msg.toDeviceId)
+        break
+      case 'sync:package:offer':
+        this.room.handleSyncPackageOffer(msg.syncId, msg.file, msg.toDeviceId)
+        break
+      case 'sync:done':
+        this.room.handleSyncDone(msg.syncId, msg.toDeviceId)
         break
     }
   }

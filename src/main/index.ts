@@ -93,6 +93,25 @@ function registerIpc(room: RoomManager): void {
   ipcMain.handle('file:reveal', async (_e, path: string) => {
     shell.showItemInFolder(path)
   })
+
+  /* --------------------------- sync IPC --------------------------- */
+  ipcMain.handle('sync:select-folder', async () => {
+    const result = await dialog.showOpenDialog(mainWindow!, {
+      title: '选择要同步的文件夹',
+      properties: ['openDirectory']
+    })
+    if (result.canceled || result.filePaths.length === 0) return null
+    const folderPath = result.filePaths[0]
+    room.setSyncFolder(folderPath)
+    return folderPath
+  })
+  ipcMain.handle('sync:set-folder', (_e, path: string) => {
+    room.setSyncFolder(path)
+  })
+  ipcMain.handle('sync:get-folder', () => room.getSyncFolder())
+  ipcMain.handle('sync:start', async () => {
+    await room.startSync()
+  })
   ipcMain.handle('host:local-ip', () => getLocalIp())
   ipcMain.handle('host:start', async (_e, deviceName: string) => {
     room.setLocalDeviceName(deviceName)
@@ -157,5 +176,14 @@ app.whenReady().then(async () => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
+  }
+})
+
+app.on('before-quit', async () => {
+  // Clean up sync temp directory on quit
+  try {
+    await room.getSyncManager().cleanupTempDir()
+  } catch {
+    /* ignore */
   }
 })

@@ -4,6 +4,7 @@ import { readFile, stat, mkdir, writeFile, copyFile, unlink } from 'fs/promises'
 import { existsSync } from 'fs'
 import { join, basename, extname } from 'path'
 import { Store } from '../storage/Store'
+import { FolderSyncManager } from '../sync/FolderSyncManager'
 import type {
   Note,
   DeviceInfo,
@@ -12,7 +13,8 @@ import type {
   HostMessage,
   FileMeta,
   SharedFile,
-  FileTransfer
+  FileTransfer,
+  SyncProgress
 } from '@shared/types'
 import { getMimeType } from '@shared/types'
 import { encodeFileChunk, decodeFileChunk, FILE_CHUNK_SIZE } from '../network/fileProtocol'
@@ -47,8 +49,28 @@ export class RoomManager {
   /** Files currently being received, keyed by fileId. */
   private incomingFiles = new Map<string, IncomingFile>()
 
+  /** Folder sync manager. */
+  private syncManager = new FolderSyncManager()
+
   constructor(store: Store) {
     this.store = store
+    this.wireSyncManager()
+  }
+
+  /** Wire up the FolderSyncManager callbacks. */
+  private wireSyncManager(): void {
+    this.syncManager.sendMsg = (msg) => {
+      if (this.isWritable()) {
+        this.net.broadcast(msg as HostMessage)
+      } else {
+        this.net.sendToHost(msg as ClientMessage)
+      }
+    }
+    this.syncManager.sendBinary = (data) => this.net.sendBinary(data)
+    this.syncManager.sendProgress = (progress) => this.sendSyncProgress(progress)
+    this.syncManager.getLocalDeviceId = () => this.localDeviceId
+    this.syncManager.getLocalDeviceName = () => this.localDeviceName
+    this.syncManager.getRole = () => this.role
   }
 
   setWindow(win: BrowserWindow): void {
@@ -113,6 +135,14 @@ export class RoomManager {
 
   getDevices(): DeviceInfo[] {
     return this.devices
+  }
+
+  getSyncManager(): FolderSyncManager {
+    return this.syncManager
+  }
+
+  private sendSyncProgress(progress: SyncProgress): void {
+    this.win?.webContents.send('sync:progress', progress)
   }
 
   getNotes(): Note[] {
@@ -366,6 +396,9 @@ export class RoomManager {
 
   /** Called when a raw binary frame arrives from the network. */
   handleFileChunkRaw(buf: Buffer): void {
+    // First, check if this chunk belongs to a sync package
+    if (this.syncManager.handleBinaryChunk(buf)) return
+
     const decoded = decodeFileChunk(buf)
     if (!decoded) return
     const incoming = this.incomingFiles.get(decoded.fileId)
@@ -385,6 +418,9 @@ export class RoomManager {
 
   /** Called when a `file:complete` message arrives from the network. */
   async handleFileComplete(fileId: string): Promise<void> {
+    // Check if this is a sync package
+    if (await this.syncManager.handleFileComplete(fileId)) return
+
     const incoming = this.incomingFiles.get(fileId)
     if (!incoming) return
 
@@ -466,5 +502,53 @@ export class RoomManager {
     const file = this.store.getFile(id)
     if (!file) throw new Error('文件不存在')
     await copyFile(file.savedPath, destPath)
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  Folder sync operations                                            */
+  /* ------------------------------------------------------------------ */
+
+  /** Set the local sync folder path. */
+  setSyncFolder(path: string): void {
+    this.syncManager.setSyncFolder(path)
+  }
+
+  /** Get the current sync folder path. */
+  getSyncFolder(): string {
+    return this.syncManager.getSyncFolder()
+  }
+
+  /** Start a folder sync session. */
+  async startSync(): Promise<void> {
+    await this.syncManager.startSync()
+  }
+
+  /** Handle `sync:request` from a peer. */
+  async handleSyncRequest(manifest: import('@shared/types').SyncManifest): Promise<void> {
+    await this.syncManager.handleSyncRequest(manifest)
+  }
+
+  /** Handle `sync:response` from a peer. */
+  async handleSyncResponse(
+    syncId: string,
+    manifest: import('@shared/types').SyncManifest,
+    neededFiles: string[],
+    toDeviceId: string
+  ): Promise<void> {
+    await this.syncManager.handleSyncResponse(syncId, manifest, neededFiles, toDeviceId)
+  }
+
+  /** Handle `sync:package:offer` from a peer. */
+  handleSyncPackageOffer(
+    syncId: string,
+    file: FileMeta,
+    toDeviceId: string
+  ): void {
+    this.syncManager.handleSyncPackageOffer(syncId, file, toDeviceId)
+  }
+
+  /** Handle `sync:done` from a peer. */
+  handleSyncDone(syncId: string, toDeviceId: string): void {
+    this.syncManager.handleSyncDone(syncId, toDeviceId)
   }
 }

@@ -1,4 +1,12 @@
-import type { Note, DeviceInfo, Role, RoomInfo, SharedFile, FileTransfer } from '@shared/types'
+import type {
+  Note,
+  DeviceInfo,
+  Role,
+  RoomInfo,
+  SharedFile,
+  FileTransfer,
+  SyncProgress
+} from '@shared/types'
 
 export interface AppApi {
   ping: () => Promise<string>
@@ -31,6 +39,13 @@ export interface AppApi {
   saveFileAs: (id: string) => Promise<boolean>
   deleteFile: (id: string) => Promise<void>
   revealFile: (path: string) => Promise<void>
+
+  /* folder sync */
+  selectSyncFolder: () => Promise<string | null>
+  setSyncFolder: (path: string) => Promise<void>
+  getSyncFolder: () => Promise<string>
+  startSync: () => Promise<void>
+  onSyncProgress: (cb: (progress: SyncProgress) => void) => () => void
 }
 
 declare global {

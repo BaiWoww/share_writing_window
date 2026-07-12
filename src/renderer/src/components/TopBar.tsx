@@ -1,4 +1,4 @@
-type ViewMode = 'notes' | 'files'
+type ViewMode = 'notes' | 'files' | 'sync'
 
 interface TopBarProps {
   statusText: string
@@ -46,6 +46,16 @@ export function TopBar({
             }`}
           >
             文件
+          </button>
+          <button
+            onClick={() => onViewModeChange('sync')}
+            className={`rounded px-2.5 py-0.5 text-xs font-medium transition-colors ${
+              viewMode === 'sync'
+                ? 'bg-notion-bg text-notion-text shadow-sm'
+                : 'text-notion-subtext hover:text-notion-text'
+            }`}
+          >
+            同步
           </button>
         </div>
       </div>
