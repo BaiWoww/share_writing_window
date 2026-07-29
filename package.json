@@ -44,6 +44,7 @@
   },
   "dependencies": {
     "sql.js": "^1.13.0",
+    "tar": "^6.2.1",
     "uuid": "^11.0.5",
     "ws": "^8.18.0"
   },
@@ -52,6 +53,7 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@types/sql.js": "^1.4.9",
+    "@types/tar": "^6.1.13",
     "@types/uuid": "^10.0.0",
     "@types/ws": "^8.5.13",
     "@vitejs/plugin-react": "^4.3.4",

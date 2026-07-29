@@ -3,8 +3,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { readFile, writeFile, mkdir, unlink, readdir, stat, rm } from 'fs/promises'
 import { existsSync } from 'fs'
 import { join, relative, basename, sep } from 'path'
-import { execFile } from 'child_process'
-import { promisify } from 'util'
+import tar from 'tar'
 import type {
   FileEntry,
   SyncManifest,
@@ -15,8 +14,6 @@ import type {
 } from '@shared/types'
 import { getMimeType } from '@shared/types'
 import { encodeFileChunk, decodeFileChunk, FILE_CHUNK_SIZE } from '../network/fileProtocol'
-
-const execFileAsync = promisify(execFile)
 
 /** Maximum number of files to send in a single tar.gz package. */
 const MAX_FILES_PER_PACKAGE = 500
@@ -533,18 +530,14 @@ export class FolderSyncManager {
     relativePaths: string[],
     outputPath: string
   ): Promise<void> {
-    // Convert Windows backslashes to forward slashes for tar
-    const normalizedPaths = relativePaths.map((p) => p.replace(/\\/g, '/'))
-
-    // Use tar to create a gzip-compressed archive
-    // -C changes to the base directory so paths are relative
-    await execFileAsync('tar', [
-      '-czf',
-      outputPath,
-      '-C',
-      basePath,
-      ...normalizedPaths
-    ])
+    await tar.create(
+      {
+        gzip: true,
+        file: outputPath,
+        cwd: basePath
+      },
+      relativePaths
+    )
   }
 
   /** Extract a tar.gz archive to a target folder. */
@@ -553,8 +546,10 @@ export class FolderSyncManager {
       await mkdir(targetPath, { recursive: true })
     }
 
-    // Use tar to extract
-    await execFileAsync('tar', ['-xzf', archivePath, '-C', targetPath])
+    await tar.extract({
+      file: archivePath,
+      cwd: targetPath
+    })
   }
 
   /** Safely delete a file, ignoring errors. */
